@@ -269,9 +269,7 @@ Claro! Seguindo o estilo descritivo e numerado que você usou no README anterior
    if inicial is None:
        print("AFD sem estado inicial.")
        return None
-   if not finais:
-       print("AFD sem estado final.")
-       return None
+
    ```
 
    * **Estado inicial**: a função verifica se pelo menos um estado possui a tag `<initial>`. Se nenhum for encontrado, a função **cancela o carregamento** e exibe:
@@ -279,13 +277,6 @@ Claro! Seguindo o estilo descritivo e numerado que você usou no README anterior
      ```
      AFD sem estado inicial.
      ```
-   * **Estado final**: também verifica se há pelo menos um estado com a tag `<final>`. Caso não haja, a importação é interrompida e imprime:
-
-     ```
-     AFD sem estado final.
-     ```
-
-   ✅ **Se ambas as condições forem satisfeitas**, o processo segue normalmente para a leitura das transições e construção do autômato.
 
 ---
 

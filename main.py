@@ -53,7 +53,7 @@ def menu():
                 try:
                     afd = AFD.carregar_afd_de_jflap(caminho)
                     if afd is None:
-                        print("❌ AFD inválido: ausência de estado inicial ou final.")
+                        print("❌ AFD inválido: ausência de estado inicial.")
                     else:
                         afds[nome_afd] = afd
                         print(f"✅ AFD carregado com sucesso com o nome '{nome_afd}' de:\n{caminho}")

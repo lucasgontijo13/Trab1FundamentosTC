@@ -145,11 +145,8 @@ class AFD:
                 finais.add(nome)           # adiciona a estados finais
 
         if inicial is None:
-
             return None
-        if not finais:
 
-            return None
 
         # 2) Ler transições
         for trans in automato.findall('transition'):
