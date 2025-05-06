@@ -52,8 +52,11 @@ def menu():
             if caminho and os.path.exists(caminho):
                 try:
                     afd = AFD.carregar_afd_de_jflap(caminho)
-                    afds[nome_afd] = afd
-                    print(f"✅ AFD carregado com sucesso com o nome '{nome_afd}' de:\n{caminho}")
+                    if afd is None:
+                        print("❌ AFD inválido: ausência de estado inicial ou final.")
+                    else:
+                        afds[nome_afd] = afd
+                        print(f"✅ AFD carregado com sucesso com o nome '{nome_afd}' de:\n{caminho}")
                 except Exception as e:
                     print(f"❌ Erro ao carregar AFD:\n{e}")
             else:

@@ -258,8 +258,38 @@ Monta uma descrição em texto com estados, alfabeto, transições, inicial e fi
      * Lê `id` e `name` e registra em `estados`.
      * Se houver um elemento `<initial>` dentro do `<state>`, marca esse `nome` como estado inicial.
      * Se houver um `<final>`, adiciona esse `nome` ao conjunto de finais.
+Claro! Seguindo o estilo descritivo e numerado que você usou no README anterior, aqui está a **seção atualizada** para documentar a verificação de estado inicial e final ao carregar o AFD:
 
-3. **Leitura das transições**
+---
+
+
+3. **Verifica se existe estado inicial e final**
+
+   ```python
+   if inicial is None:
+       print("AFD sem estado inicial.")
+       return None
+   if not finais:
+       print("AFD sem estado final.")
+       return None
+   ```
+
+   * **Estado inicial**: a função verifica se pelo menos um estado possui a tag `<initial>`. Se nenhum for encontrado, a função **cancela o carregamento** e exibe:
+
+     ```
+     AFD sem estado inicial.
+     ```
+   * **Estado final**: também verifica se há pelo menos um estado com a tag `<final>`. Caso não haja, a importação é interrompida e imprime:
+
+     ```
+     AFD sem estado final.
+     ```
+
+   ✅ **Se ambas as condições forem satisfeitas**, o processo segue normalmente para a leitura das transições e construção do autômato.
+
+---
+
+4. **Leitura das transições**
 
    ```python
    for trans in automato.findall('transition'):
@@ -281,7 +311,7 @@ Monta uma descrição em texto com estados, alfabeto, transições, inicial e fi
      4. Adiciona o símbolo ao `alfabeto`.
      5. Armazena a transição como tupla `(origem, simbolo, destino)` em `transicoes_temp`.
 
-4. **Construção do objeto AFD e adição de transições**
+5. **Construção do objeto AFD e adição de transições**
 
    ```python
    afd = AFD(alfabeto)
@@ -304,7 +334,7 @@ Monta uma descrição em texto com estados, alfabeto, transições, inicial e fi
 
 ---
 
-Vamos destrinchar a função `salvar_afd_em_jflap` em cinco etapas, espelhando a explicação anterior:
+Função `salvar_afd_em_jflap`:
 
 1. **Criação da estrutura XML básica**
 
@@ -380,7 +410,7 @@ Vamos destrinchar a função `salvar_afd_em_jflap` em cinco etapas, espelhando a
 ---
 
 
-Vamos dividir o método `minimizar_hopcroft` em etapas para entender exatamente o que ele faz:
+Função `minimizar_hopcroft`:
 
 ---
 
@@ -545,7 +575,7 @@ return novo
 
 
 
-Vamos detalhar o método `testar_equivalencia` em cinco etapas, espelhando o estilo das explicações anteriores:
+Função `Testar_equivalencia`:
 
 ---
 
@@ -651,7 +681,7 @@ Se nunca encontrar uma diferença no critério de aceitação, conclui que os au
 
 
 
-Vamos dividir o método `estados_equivalentes` em cinco etapas para entender como ele identifica pares de estados equivalentes:
+Função `estados_equivalentes`:
 
 ---
 
@@ -764,8 +794,12 @@ return equivalentes
 
 
 
+Pensou por dois segundos
 
-Vamos decompor o método `complemento_afd` em cinco etapas, seguindo o estilo das explicações anteriores:
+
+---
+
+Função `completar_afd` – Totalização do AFD
 
 ---
 
@@ -776,22 +810,23 @@ from copy import deepcopy
 comp = deepcopy(afd)
 ```
 
-* Cria uma **cópia profunda** (`deepcopy`) do AFD passado como parâmetro, de modo a não alterar o autômato original.
-* `comp` será a estrutura sobre a qual faremos as modificações para obter o complemento.
+* Gera uma **cópia profunda** de `afd`, preservando o original inalterado.
+* `comp` servirá como base para tornar o autômato total (com todas as transições definidas).
 
 ---
 
-### 2. Determinação do alfabeto efetivo
+### 2. Reconstrução do alfabeto efetivo
 
 ```python
 sigma = {simbolo for (_, simbolo) in comp.transicoes.keys()}
 ```
 
-* Reconstrói o alfabeto `σ` baseado **apenas** nos símbolos que realmente aparecem nas chaves do dicionário de transições (`(estado, simbolo)`), ignorando símbolos que não são usados.
+* Extrai de `comp.transicoes` apenas os símbolos realmente usados nas chaves `(estado, símbolo)`.
+* Ignora eventuais símbolos inúteis ou não referenciados.
 
 ---
 
-### 3. Identificação de transições faltantes
+### 3. Detecção de transições faltantes
 
 ```python
 faltantes = []
@@ -801,91 +836,83 @@ for estado in comp.estados:
             faltantes.append((estado, simbolo))
 ```
 
-* Para **cada** estado em `comp.estados` e **cada** símbolo em `σ`, verifica se existe uma transição definida.
-* Se não existir, registra esse par `(estado, símbolo)` em `faltantes`.
-* Isso detecta lacunas que impediriam o AFD de ser “total” (ou seja, de ter uma transição para todo símbolo).
+* Percorre **cada** par `(estado, símbolo)` em `comp.estados × σ`:
+
+  * Se não existir a transição, registra em `faltantes`.
+* Isso identifica as “lacunas” que impedem o AFD de ser total.
 
 ---
 
-### 4. Criação e ligação do estado “morto” (dead state)
+### 4. Criação do estado “morto” e fechamento de transições
 
 ```python
 if faltantes:
     dead = '__dead__'
     comp.estados.add(dead)
-    # loop de auto‑transições no dead
     for simbolo in sigma:
         comp.transicoes[(dead, simbolo)] = dead
-    # liga cada transição faltante ao dead
     for (origem, simbolo) in faltantes:
         comp.transicoes[(origem, simbolo)] = dead
 ```
 
-* **Se** houverem transições faltantes:
+* **Se** houver algum par faltante:
 
-  1. Cria um novo estado chamado `__dead__`.
-  2. Garante que, ao receber qualquer símbolo em `dead`, o AFD permaneça em `dead` (auto‑laços em todo `σ`).
-  3. Para cada par faltante, direciona a transição até `dead`.
-* Assim, `comp` se torna um autômato **total**: definido para qualquer símbolo em qualquer estado.
-
----
-
-### 5. Inversão do conjunto de finais
-
-```python
-comp.finais = comp.estados - comp.finais
-```
-
-* Finalmente, define o novo conjunto de estados de aceitação como **todos** os estados que **não** eram finais em `comp` (agora totalizado).
-* Estados que antes eram finais deixam de ser, e vice‑versa.
+  1. Adiciona `__dead__` a `comp.estados`.
+  2. Garante auto‑laços em `dead` para **todo** símbolo de `σ`.
+  3. Direciona cada transição faltante para `dead`.
+* Após isso, `comp` é um AFD **total**.
 
 ---
 
-### 6. Retorno do autômato complemento
+### 5. Retorno do AFD totalizado
 
 ```python
 return comp
 ```
 
-* `comp` agora é o **complemento** de `afd`:
-
-  1. Totalizado (nenhuma transição indefinida).
-  2. Aceita exatamente as cadeias rejeitadas pelo original.
+* `comp` está pronto para ser usado por outras operações (sem lacunas).
 
 ---
 
-**Resumo do fluxo**:
-
-1. **Clone** o AFD para não alterar o original.
-2. **Recoleta** o alfabeto efetivamente usado.
-3. **Detecta** transições ausentes para tornar o autômato total.
-4. **Adiciona** um estado “morto” e fecha todas as transições faltantes nele.
-5. **Inverte** o conjunto de estados finais para obter o complemento.
-6. **Retorna** o novo AFD, que reconhece a linguagem complementar do original.
-
-
-
-
-
-Vamos decompor o método `produto_afds` em cinco etapas, seguindo o mesmo estilo das explicações anteriores:
+Função `complemento_afd` – Complemento via totalização
 
 ---
 
-### 1. Unificação do alfabeto e criação do AFD produto
+### 1. Totalização e inversão de finais
 
 ```python
-sigma = set(afd1.alfabeto) | set(afd2.alfabeto)
-novo   = AFD(sigma)
+comp = self.completar_afd(afd)
+comp.finais = comp.estados - comp.finais
+return comp
 ```
 
-1. **Alfabeto unificado**
-   Combina os símbolos que aparecem em `afd1` e em `afd2` para formar o alfabeto do autômato produto.
-2. **Instância do produto**
-   Cria um novo AFD (`novo`) cujo alfabeto é exatamente essa união, sem estados, transições ou marcações de inicial/finais ainda.
+1. Chama `completar_afd` para garantir que não haja transições faltantes.
+2. Inverte o conjunto de estados finais:
+
+   * Novos finais = todos os estados **que não** eram finais.
+3. Retorna o complemento de `afd`, pronto para reconhecer a linguagem inversa.
 
 ---
 
-### 2. Geração dos estados do produto
+Função `produto_afds` – Produto de dois AFDs totalizados
+
+---
+
+### 1. Totalização prévia dos autômatos
+
+```python
+afd1 = self.completar_afd(afd1)
+afd2 = self.completar_afd(afd2)
+sigma = set(afd1.alfabeto) | set(afd2.alfabeto)
+novo = AFD(sigma)
+```
+
+* Garante que ambos `afd1` e `afd2` estejam completos.
+* Unifica alfabetos e instancia o autômato produto `novo`.
+
+---
+
+### 2. Criação dos estados produto
 
 ```python
 for q1 in afd1.estados:
@@ -900,21 +927,9 @@ for q1 in afd1.estados:
             novo.finais.add(nome)
 ```
 
-* **Estados em pares**
-  Cada estado do novo AFD é um par `(q1, q2)`, onde `q1` vem de `afd1` e `q2` de `afd2`.
-* **Nomeação**
-  Usa a string `"(q1,q2)"` para representar cada par.
-* **Marcação de inicial**
-  O único estado inicial do produto é `(q1,q2)` tal que `q1` é inicial em `afd1` **e** `q2` é inicial em `afd2`.
-* **Marcação de finais**
-  Usa a função `criterio_final(in1, in2)` para decidir se `(q1,q2)` será final, onde:
-
-  * `in1 = (q1 ∈ afd1.finais)`
-  * `in2 = (q2 ∈ afd2.finais)`
-    Essa função (passada como parâmetro) pode, por exemplo, ser
-  * **interseção**: retorna `True` apenas se `in1 and in2`,
-  * **união**: retorna `True` se `in1 or in2`,
-  * **diferença** ou outro critério definido pelo usuário.
+* Cada estado de `novo` é um par `(q1, q2)`.
+* O estado inicial é o par de iniciais originais.
+* Finais definidos pelo `criterio_final(in1, in2)`.
 
 ---
 
@@ -930,60 +945,24 @@ for q1 in afd1.estados:
                 continue
             dest = f"({t1},{t2})"
             novo.transicoes[(f"({q1},{q2})", a)] = dest
-```
-
-Para cada par de estados `(q1,q2)` e cada símbolo `a` em `sigma`:
-
-1. **Transições individuais**
-
-   * `t1 = δ1(q1, a)` via `afd1.transicoes.get((q1,a))`
-   * `t2 = δ2(q2, a)` via `afd2.transicoes.get((q2,a))`
-2. **Validação**
-
-   * Se **qualquer** das transições for `None` (indefinida), ignora esse símbolo — o produto não se define ali.
-3. **Destino no produto**
-
-   * Se ambas existem, o destino é o par `(t1, t2)`.
-   * Registra `δ_prod( (q1,q2), a ) = (t1,t2)` no dicionário `novo.transicoes`.
-
----
-
-### 4. Resultados parciais do produto
-
-* Ao final dos laços, `novo.estados` contém todos os pares possíveis.
-* `novo.incial` está correto para o par de iniciais originais.
-* `novo.finais` reflete o critério passado (`interseção`, `união` ou outro).
-* `novo.transicoes` define as transições apenas onde ambos os autômatos originais têm definição.
-
----
-
-### 5. Retorno do AFD produto
-
-```python
 return novo
 ```
 
-* O método retorna o **autômato produto**, que reconhece a linguagem conforme o critério de aceitação fornecido:
-
-  * **Interseção** (linguagem de cadeias aceitas por ambos) se usarmos `criterio_final = lambda in1, in2: in1 and in2`.
-  * **União** (aceita se aceita por pelo menos um) com `lambda in1, in2: in1 or in2`.
-  * **Diferença** (`L(afd1) \ L(afd2)`) com `lambda in1, in2: in1 and not in2`.
+* Para cada `(q1,q2)×a`, verifica movimentos em ambos os AFDs.
+* Se ambos existirem, cria a transição para o par de destinos.
+* Retorna o AFD produto que segue o critério de aceitação desejado.
 
 ---
 
-**Em resumo**, o método:
+**Resumo das mudanças**:
 
-1. Unifica alfabetos.
-2. Cria estados produto nomeados como pares.
-3. Determina inicial e finais conforme função de critério.
-4. Define transições somente onde ambos originais têm movimento.
-5. Retorna o autômato que combina comportamentos de `afd1` e `afd2` segundo o critério desejado.
+* **`completar_afd`**: isolada para totalizar qualquer AFD.
+* **`complemento_afd`**: agora usa `completar_afd` antes de inverter finais.
+* **`produto_afds`**: totaliza ambos os AFDs antes de gerar estados e transições.
 
 
 
 
-
-Vamos analisar essas três operações de conjunto — união, interseção e diferença — que você implementou por meio de chamadas a métodos já definidos (`produto_afds` e `complemento_afd`):
 
 ---
 

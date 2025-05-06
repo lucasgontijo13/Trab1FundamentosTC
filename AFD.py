@@ -133,6 +133,7 @@ class AFD:
         inicial = None
         finais = set()
 
+        # 1) Ler os estados
         for state in automato.findall('state'):
             id_xml = state.get('id')  # atributo id do XML (string)
             nome = state.get('name')  # nome legível do estado
@@ -142,6 +143,13 @@ class AFD:
                 inicial = nome              # marca estado inicial
             if state.find('final') is not None:
                 finais.add(nome)           # adiciona a estados finais
+
+        if inicial is None:
+
+            return None
+        if not finais:
+
+            return None
 
         # 2) Ler transições
         for trans in automato.findall('transition'):
@@ -348,39 +356,42 @@ class AFD:
     def copiar(afd):
         return deepcopy(afd)
 
-    # ===== Operações entre AFDs =====
-
-    def complemento_afd(self, afd):
+    def completar_afd(self, afd):
         from copy import deepcopy
         comp = deepcopy(afd)
 
         # Reconstrói sigma apenas com os símbolos que realmente aparecem nas transições
         sigma = {simbolo for (_, simbolo) in comp.transicoes.keys()}
 
-        # --- passo 2: detectar transições faltantes sobre sigma ---
+        # Detectar transições faltantes sobre sigma
         faltantes = []
         for estado in comp.estados:
             for simbolo in sigma:
                 if (estado, simbolo) not in comp.transicoes:
                     faltantes.append((estado, simbolo))
 
-        # --- passo 3: se faltar alguma, criar dead state e completá‑las ---
+        # Se faltar alguma, criar estado morto e completá-las
         if faltantes:
             dead = '__dead__'
             comp.estados.add(dead)
             # dead -> dead em todo símbolo
             for simbolo in sigma:
                 comp.transicoes[(dead, simbolo)] = dead
-            # ligar cada falta ao dead
+            # ligar cada transição faltante ao estado morto
             for (origem, simbolo) in faltantes:
                 comp.transicoes[(origem, simbolo)] = dead
 
-        # --- passo 4: inverter o conjunto de finais ---
-        comp.finais = comp.estados - comp.finais
         return comp
+
+    # ===== Operações entre AFDs =====
+
+
 
     def produto_afds(self, afd1, afd2, criterio_final):
         # criterio_final: função que recebe (f1, f2) e diz se (q1,q2) é final
+        afd1 = self.completar_afd(afd1)
+        afd2 = self.completar_afd(afd2)
+
         sigma = set(afd1.alfabeto) | set(afd2.alfabeto)
         novo = AFD(sigma)
         # criar estados produto
@@ -406,6 +417,11 @@ class AFD:
                         continue  # transições incompletas ignoradas
                     novo.transicoes[(f"({q1},{q2})", a)] = dest
         return novo
+
+    def complemento_afd(self, afd):
+        comp = self.completar_afd(afd)
+        comp.finais = comp.estados - comp.finais
+        return comp
 
     def uniao_afds(self, afd1, afd2):
         return self.produto_afds(afd1, afd2, lambda f1, f2: f1 or f2)
